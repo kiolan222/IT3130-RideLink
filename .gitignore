@@ -1,0 +1,24 @@
+# macOS
+.DS_Store
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# VS Code
+.vscode/
+
+# Maven
+**/target/
+
+# Java
+*.class
+*.log
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
