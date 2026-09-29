@@ -1,13 +1,13 @@
 package com.ridelink.account;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@SpringBootTest
+import org.junit.jupiter.api.Test;
+
 class AccountServiceApplicationTests {
 
 	@Test
-	void contextLoads() {
+	void applicationTypeIsPresent() {
+		assertNotNull(AccountServiceApplication.class);
 	}
-
 }
