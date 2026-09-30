@@ -1,0 +1,324 @@
+{
+  "info": {
+    "name": "RideLink",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Happy-path ride booking plus negative cases. Set the RideLink Local environment first."
+  },
+  "item": [
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "Login passenger",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.environment.set('passengerToken', json.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"passenger@ridelink.local\",\n  \"password\": \"Pass123!\"\n}"
+            },
+            "url": "{{accountUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "Login driver",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.environment.set('driverToken', json.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"driver@ridelink.local\",\n  \"password\": \"Drive123!\"\n}"
+            },
+            "url": "{{accountUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "Login admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.environment.set('adminToken', json.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@ridelink.local\",\n  \"password\": \"Admin123!\"\n}"
+            },
+            "url": "{{accountUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "Get my profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{passengerToken}}" }],
+            "url": "{{accountUrl}}/api/accounts/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Driver preparation",
+      "item": [
+        {
+          "name": "Upsert vehicle and area",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{driverToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicle\": {\n    \"make\": \"Toyota\",\n    \"model\": \"Prius\",\n    \"plateNumber\": \"CAB-1234\",\n    \"color\": \"White\"\n  },\n  \"serviceArea\": \"Colombo\",\n  \"location\": { \"lat\": 6.9271, \"lng\": 79.8612 }\n}"
+            },
+            "url": "{{driverUrl}}/api/drivers/me"
+          }
+        },
+        {
+          "name": "Set AVAILABLE",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{driverToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"availability\": \"AVAILABLE\" }"
+            },
+            "url": "{{driverUrl}}/api/drivers/me/availability"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Fare estimate",
+      "item": [
+        {
+          "name": "Estimate Colombo to Kandy",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{passengerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"pickup\": \"Colombo\", \"destination\": \"Kandy\" }"
+            },
+            "url": "{{fareUrl}}/api/fares/estimate"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Ride lifecycle",
+      "item": [
+        {
+          "name": "Create ride (assign first eligible driver)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.id) { pm.environment.set('rideId', json.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{passengerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"pickup\": \"Colombo\", \"destination\": \"Kandy\" }"
+            },
+            "url": "{{rideUrl}}/api/rides"
+          }
+        },
+        {
+          "name": "Driver accept",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{driverToken}}" }],
+            "url": "{{rideUrl}}/api/rides/{{rideId}}/accept"
+          }
+        },
+        {
+          "name": "Driver start",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{driverToken}}" }],
+            "url": "{{rideUrl}}/api/rides/{{rideId}}/start"
+          }
+        },
+        {
+          "name": "Driver complete (publishes RabbitMQ event)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{driverToken}}" }],
+            "url": "{{rideUrl}}/api/rides/{{rideId}}/complete"
+          }
+        },
+        {
+          "name": "Get ride",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{passengerToken}}" }],
+            "url": "{{rideUrl}}/api/rides/{{rideId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Payment",
+      "item": [
+        {
+          "name": "Get pending payment by ride",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.id) { pm.environment.set('paymentId', json.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{passengerToken}}" }],
+            "url": "{{fareUrl}}/api/payments/ride/{{rideId}}"
+          }
+        },
+        {
+          "name": "Pay with successful card",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{passengerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"rideId\": \"{{rideId}}\", \"cardEnding\": \"4242\" }"
+            },
+            "url": "{{fareUrl}}/api/payments"
+          }
+        },
+        {
+          "name": "Get receipt",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{passengerToken}}" }],
+            "url": "{{fareUrl}}/api/receipts/{{paymentId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Negative scenarios",
+      "item": [
+        {
+          "name": "No available driver",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{passengerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"pickup\": \"Jaffna\", \"destination\": \"Colombo\" }"
+            },
+            "url": "{{rideUrl}}/api/rides"
+          }
+        },
+        {
+          "name": "Invalid transition (complete from assigned)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{driverToken}}" }],
+            "url": "{{rideUrl}}/api/rides/{{rideId}}/complete"
+          }
+        },
+        {
+          "name": "Unauthorised passenger accept",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{passengerToken}}" }],
+            "url": "{{rideUrl}}/api/rides/{{rideId}}/accept"
+          }
+        },
+        {
+          "name": "Invalid register payload",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"not-an-email\", \"password\": \"short\", \"fullName\": \"\", \"role\": \"PASSENGER\" }"
+            },
+            "url": "{{accountUrl}}/api/accounts/register"
+          }
+        },
+        {
+          "name": "Failed simulated payment (card 0000)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{passengerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"rideId\": \"{{rideId}}\", \"cardEnding\": \"0000\" }"
+            },
+            "url": "{{fareUrl}}/api/payments"
+          }
+        }
+      ]
+    }
+  ]
+}
