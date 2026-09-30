@@ -2,7 +2,6 @@ package com.ridelink.drivervehicle.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -41,7 +40,6 @@ class DriverServiceTest {
 		profile.setAvailability(Availability.AVAILABLE);
 		when(repository.findByAvailabilityAndServiceAreaIgnoreCase(Availability.AVAILABLE, "Colombo"))
 				.thenReturn(List.of(profile));
-		when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
 		assertEquals(1, driverService.findEligible("Colombo").size());
 		assertEquals("d1", driverService.findEligible("Colombo").get(0).accountId());
